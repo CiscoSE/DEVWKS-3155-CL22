@@ -1,0 +1,54 @@
+all:
+  vars:
+    ansible_python_interpreter: /usr/bin/env python3
+  children:
+    # group_vars/dcnm.yaml
+    dcnm:
+      hosts:
+        # host_vars/dcloud_dcnm.yaml
+        dcloud_dcnm:
+          ansible_host: 198.18.134.200
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          ansible_httpapi_validate_certs: False
+          ansible_httpapi_use_ssl: True
+          ansible_network_os: cisco.dcnm.dcnm
+    fabric1:
+      hosts:
+        leaf1:
+          ansible_host: 198.18.4.101
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          # ansible_network_os: cisco.nxos.nxos
+        spine1:
+          ansible_host: 198.18.4.102
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          # ansible_network_os: cisco.nxos.nxos
+        bgw1:
+          ansible_host: 198.18.4.103
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          # ansible_network_os: cisco.nxos.nxos
+    fabric2:
+      hosts:
+        leaf2:
+          ansible_host: 198.18.4.203
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          # ansible_network_os: cisco.nxos.nxos
+        leaf3:
+          ansible_host: 198.18.4.201
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          # ansible_network_os: cisco.nxos.nxos
+        spine2:
+          ansible_host: 198.18.4.202
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          # ansible_network_os: cisco.nxos.nxos
+        bgw2:
+          ansible_host: 198.18.4.204
+          ansible_user: admin
+          ansible_ssh_pass: C1sco12345
+          # ansible_network_os: cisco.nxos.nxos

@@ -1,0 +1,53 @@
+#
+# Create the fabric.
+#
+#   Because **dcnm_rest** is not idempotent, we can only run this playbook
+#   once successfully.  Otherwise, errors will occur.
+#
+#   Because of Issue #140, we can't use REST API to check for existence of
+#   fabric before attempting creation either.
+#     https://github.com/CiscoDevNet/ansible-dcnm/issues/140
+#
+#   Note: Running playbook with "--check" option will still create a fabric.
+#
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+    # Must populate this with information discovered from REST API
+    fabric_data: {
+      "FABRIC_NAME": "{{ site2.fabric_name }}",
+      "SITE_ID": "65002",
+      "BGP_AS": "65002",
+      "ENABLE_NXAPI": "true",
+      "ENABLE_NXAPI_HTTP": "true",
+      "ENABLE_NGOAM": "true",
+      "CDP_ENABLE": "true",
+      "PM_ENABLE" : "false",
+      "GRFIELD_DEBUG_FLAG": "Enable",
+      "LOOPBACK0_IP_RANGE": "20.2.0.0/22",
+      "LOOPBACK1_IP_RANGE": "20.3.0.0/22",
+      "ANYCAST_RP_IP_RANGE": "20.254.254.0/24",
+      "SUBNET_RANGE": "20.4.0.0/16",
+      "DCI_SUBNET_RANGE": "20.33.0.0/16"
+    }
+
+  tasks:
+    # Create the Fabric
+    - name: "Create the VXLAN fabric: '{{ site2.fabric_name }}'"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site2.fabric_name }}/{{ site2.fabric_template }}"
+        data: "{{ fabric_data | to_json }}"

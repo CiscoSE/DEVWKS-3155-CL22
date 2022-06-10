@@ -1,0 +1,38 @@
+#
+# Configure Interfaces for Site 2
+#
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+  tasks:
+    - name: Configure the Ethernet1/6 interfaces
+      dcnm_interface:
+        fabric: "{{ site2.fabric_name }}"
+        check_deploy: yes
+        state: merged
+        config:
+          - name: "Ethernet1/6"
+            switch:
+              - "{{ site2.leaf2_ip }}"
+              - "{{ site2.leaf3_ip }}"
+            type: eth
+            profile:
+              admin_state: yes
+              bpdu_guard: no
+              mode: trunk
+              mtu: jumbo
+              port_type_fast: yes
+              allowed_vlans: "450"

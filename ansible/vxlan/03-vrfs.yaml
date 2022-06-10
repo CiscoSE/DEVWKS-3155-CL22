@@ -1,0 +1,41 @@
+#
+# Add Custom VRFs to Site 2
+#
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+  tasks:
+    - name: Create VXLAN EVPN Fabric VRFs (Source of Truth)
+      dcnm_vrf:
+        fabric: "{{ site2.fabric_name }}"
+        state: replaced
+        config: 
+          - vrf_name: "Overlay"
+            vrf_id: 51000
+            vlan_id: 2100
+            deploy: true
+            attach:
+              - ip_address: "{{ site2.leaf2_ip }}"
+              - ip_address: "{{ site2.leaf3_ip }}"
+              - ip_address: "{{ site2.bgw2_ip }}"
+          - vrf_name: "PCI"
+            vrf_id: 51001
+            vlan_id: 2101
+            deploy: true
+            attach:
+              - ip_address: "{{ site2.leaf2_ip }}"
+              - ip_address: "{{ site2.leaf3_ip }}"
+

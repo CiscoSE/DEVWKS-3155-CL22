@@ -1,0 +1,3 @@
+ansible-core ~= 2.11.12
+requests ~= 2.27.1
+jmespath ~= 1.0.0

@@ -1,0 +1,92 @@
+#
+# Add switch and set role with REST API
+#
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+    switch_data: {
+      "seedIP": "{{ site1.leaf1_ip }},{{ site1.spine1_ip }},{{ site1.bgw1_ip }}",
+      "preserveConfig": "true",
+      "username": "{{ switch_username }}",
+      "password": "{{ switch_password }}",
+      "switches": [
+        {
+          "deviceIndex": "{{ site1.leaf1_name }}-n9k({{ site1.leaf1_serial }})",
+          "sysName": "{{ site1.leaf1_name }}",
+          "ipaddr": "{{ site1.leaf1_ip }}",
+          "platform": "N9K-9000v",
+          "serial_number": "{{ site1.leaf1_serial }}",
+          "version": "9.2(3)"
+        },
+        {
+          "deviceIndex": "{{ site1.spine1_name }}-n9k({{ site1.spine1_serial }})",
+          "sysName": "{{ site1.spine1_name }}",
+          "ipaddr": "{{ site1.spine1_ip }}",
+          "platform": "N9K-9000v",
+          "serial_number": "{{ site1.spine1_serial }}",
+          "version": "9.2(3)"
+        },
+        {
+          "deviceIndex": "{{ site1.bgw1_name }}-n9k({{ site1.bgw1_serial }})",
+          "sysName": "{{ site1.bgw1_name }}",
+          "ipaddr": "{{ site1.bgw1_ip }}",
+          "platform": "N9K-9000v",
+          "serial_number": "{{ site1.bgw1_serial }}",
+          "version": "9.2(3)"
+        }
+      ]
+    }
+
+    role_data:
+      - {
+            "serialNumber": "{{ site1.bgw1_serial }}",
+            "role": "{{ site1.bgw1_role }}"
+        }
+      - {
+            "serialNumber": "{{ site1.spine1_serial }}",
+            "role": "{{ site1.spine1_role }}"
+        }
+      - {
+            "serialNumber": "{{ site1.leaf1_serial }}",
+            "role": "{{ site1.leaf1_role }}"
+        }
+
+  tasks:
+    # Add switches to the fabric
+    - name: "Add switches to the Classic fabric: '{{ site1.fabric_name }}'"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/inventory/discover"
+        data: "{{ switch_data | to_json }}"
+      ignore_errors: true
+
+    # Set the switch roles
+    - name: "Set switch roles on Classic fabric: '{{ site1.fabric_name }}'"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/switches/roles"
+        data: "{{ role_data | to_json }}"
+
+    # Save and Deploy
+    - name: Save changes to "{{ site1.fabric_name }}"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/config-save"
+
+    - name: Deploy changes to "{{ site1.fabric_name }}"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/config-deploy"

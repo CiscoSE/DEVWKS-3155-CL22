@@ -1,0 +1,25 @@
+{
+    "policy": "int_vlan",
+    "interfaceType": "INTERFACE_VLAN",
+    "interfaces": [
+        {
+            "serialNumber": "9XBDJK1CPWA",
+            "ifName": "Vlan2305",
+            "nvPairs": {
+                "POLICY_ID": "DEMO-1",
+                "SERIAL_NUMBER": "9XBDJK1CPWA",
+                "INTF_NAME": "Vlan2305",
+                "INTF_VRF": "default",
+                "IP": "192.168.5.1",
+                "PREFIX": "24",
+                "MTU": "1500",
+                "CONF": "ip router ospf 3155 area 0.0.0.0",
+                "ENABLE_HSRP": false,
+                "DISABLE_IP_REDIRECTS": true,
+                "ROUTING_TAG": "12345",
+                "DESC": "",
+                "ADMIN_STATE": true
+            }
+        }
+    ]
+}

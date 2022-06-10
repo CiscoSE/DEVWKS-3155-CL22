@@ -1,0 +1,39 @@
+#
+# Create the fabric.
+#
+#   Because **dcnm_rest** is not idempotent, we can only run this playbook
+#   once successfully.  Otherwise, errors will occur.
+#
+#   Because of Issue #140, we can't use REST API to check for existence of
+#   fabric before attempting creation either.
+#     https://github.com/CiscoDevNet/ansible-dcnm/issues/140
+#
+#   Note: Running playbook with "--check" option will still create a fabric.
+#
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+    # Must populate this with information discovered from REST API
+    fabric_data: {
+    }
+
+  tasks:
+    # Create the Fabric
+    - name: "Create the Classic fabric: '{{ site1.fabric_name }}'"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/{{ site1.fabric_template }}"
+        data: "{{ fabric_data | to_json }}"

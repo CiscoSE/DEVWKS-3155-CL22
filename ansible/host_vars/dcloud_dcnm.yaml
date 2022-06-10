@@ -1,0 +1,55 @@
+---
+# file: hosts_vars/dcloud_dcnm.yaml
+
+site2:
+  fabric_name: "Brownfield"
+  fabric_template: "Easy_Fabric"
+  bgw2_ip: "198.18.4.204"
+  bgw2_role: "border_gateway"
+  spine2_ip: "198.18.4.202"
+  spine2_role: "spine"
+  leaf2_ip: "198.18.4.203"
+  leaf2_role: "leaf"
+  leaf3_ip: "198.18.4.201"
+  leaf3_role: "leaf"
+  vrfs:
+    - vrf_name: Overlay
+      vrf_id: 51000
+      vlan_id: 2100
+      deploy: true
+    - vrf_name: PCI
+      vrf_id: 51001
+      vlan_id: 2101
+      deploy: true
+  networks:
+    - net_name: "Red_Leader"
+      vrf_name: "Overlay"
+      net_id: 31000
+      vlan_id: 2300
+      gw_ip_subnet: "192.168.1.1/24"
+      deploy: true
+    - net_name: "Red_Five"
+      vrf_name: "Overlay"
+      net_id: 31005
+      vlan_id: 2305
+      gw_ip_subnet: "192.168.5.1/24"
+      deploy: true
+    - net_name: "Blue_Leader"
+      vlan_id: 2310
+      is_layer2_only: true
+
+site1:
+  fabric_name: "Greenfield"
+  fabric_template: "LAN_Classic"
+  bgw1_ip: "198.18.4.103"
+  bgw1_role: "core router"
+  bgw1_serial: 9YXAIQGJNBZ
+  bgw1_name: "BGW-1"
+  spine1_ip: "198.18.4.102"
+  spine1_role: "aggregation"
+  spine1_serial: 9XBDJK1CPWA
+  spine1_name: "Spine-1"
+  leaf1_ip: "198.18.4.101"
+  leaf1_role: "access"
+  leaf1_serial: 9JMVH9DP8CJ
+  leaf1_name: "Leaf-1"

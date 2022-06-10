@@ -1,0 +1,111 @@
+#
+# Create Network (L3 and L2) on Aggregate, L2 on Access
+#
+# Network Engineering First:
+#  - Enable SVI feature
+#  - Define VLAN and Create SVI
+#  - Configure L2 trunk link
+# 
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+    # WORKSHOP TO-DOs
+    vlan_policy_vars:
+      NAME: "Red_Five"
+      VLAN: 2305
+      MODE: "CE"
+
+  tasks:
+    - name: Read in SVI JSON Data
+      shell: cat svi_data.json
+      register: svi_config_output
+
+    - name: Create fact with SVI JSON data
+      set_fact:
+        svi_data: "{{ svi_config_output.stdout | from_json }}"
+
+    # deploy = yes, because interfaces will need them next
+    - name: Enable SVI Feature, Create VLAN on Aggregate
+      dcnm_policy:
+        fabric: "{{ site1.fabric_name }}"
+        deploy: yes
+        state: merged
+        config:
+          - name: "feature_interface_vlan_11_1"
+            priority: 100
+            create_additional_policy: false
+          - name: "create_vlan"
+            priority: 200
+            create_additional_policy: false
+            policy_vars: "{{ vlan_policy_vars }}"
+          - switch:
+            - ip: "{{ site1.spine1_ip }}"
+
+    - name: Check if SVI exists
+      dcnm_rest:
+        method: GET
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/interface?ifName=Vlan2305"
+      register: svi_details
+
+    - name: Create VLAN SVI
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/interface"
+        data: "{{ svi_data | to_json }}"
+      when: svi_details is defined and ( svi_details | type_debug == 'list' ) and ( svi_details | length == 0 )
+
+    - name: Create VLAN on Access
+      dcnm_policy:
+        fabric: "{{ site1.fabric_name }}"
+        deploy: yes
+        state: merged
+        config:
+          - name: "create_vlan"
+            priority: 200
+            create_additional_policy: false
+            policy_vars: "{{ vlan_policy_vars }}"
+          - switch:
+            - ip: "{{ site1.leaf1_ip }}"
+
+    - name: Create L2 Trunk to/from Access
+      dcnm_interface:
+        fabric: "{{ site1.fabric_name }}"
+        check_deploy: yes
+        state: merged
+        config:
+          - name: "Ethernet1/1"
+            switch:
+              - "{{ site1.spine1_ip }}"
+              - "{{ site1.leaf1_ip }}"
+            type: eth
+            profile:
+              admin_state: yes
+              bpdu_guard: no
+              mode: trunk
+              mtu: jumbo
+              port_type_fast: yes
+              allowed_vlans: "{{ vlan_policy_vars.VLAN }}"
+
+    # Save and Deploy
+    - name: Save changes to "{{ site1.fabric_name }}"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/config-save"
+
+    - name: Deploy changes to "{{ site1.fabric_name }}"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/config-deploy"

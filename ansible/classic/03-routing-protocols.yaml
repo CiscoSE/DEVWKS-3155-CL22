@@ -1,0 +1,75 @@
+#
+# Create OSPF routing processes on Core and Aggregate routers
+#
+# Network Engineering First:
+#  - Enable Feature on both routers
+#  - Define OSPF process on both routers
+# 
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+    # WORKSHOP TO-DOs
+    enable_feature_policy_name: "???"
+    ospf_process_policy_name: "???"
+    bgw1_policy_vars: "???"
+    spine1_policy_vars: "???"
+
+  tasks:
+    # deploy = no, for single push at end
+    - name: Enable OSPF on both routers
+      dcnm_policy:
+        fabric: "{{ site1.fabric_name }}"
+        deploy: no
+        state: merged
+        config:
+          - name: "{{ enable_feature_policy_name }}"
+            priority: 100
+            create_additional_policy: false
+          - switch:
+            - ip: "{{ site1.bgw1_ip }}"
+            - ip: "{{ site1.spine1_ip }}"
+
+    # deploy = no, for single push at end
+    - name: Enable OSPF Process on both routers
+      dcnm_policy:
+        fabric: "{{ site1.fabric_name }}"
+        deploy: no
+        state: merged
+        config:
+          - switch:
+            - ip: "{{ site1.bgw1_ip }}"
+              policies:
+                - name: "{{ ospf_process_policy_name }}"
+                  priority: 200
+                  create_additional_policy: false
+                  policy_vars: "{{ bgw1_policy_vars }}"
+            - ip: "{{ site1.spine1_ip }}"
+              policies:
+                - name: "{{ ospf_process_policy_name }}"
+                  priority: 200
+                  create_additional_policy: false
+                  policy_vars: "{{ spine1_policy_vars }}"
+
+    # Save and Deploy
+    - name: Save changes to "{{ site1.fabric_name }}"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/config-save"
+
+    - name: Deploy changes to "{{ site1.fabric_name }}"
+      dcnm_rest:
+        method: POST
+        path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site1.fabric_name }}/config-deploy"

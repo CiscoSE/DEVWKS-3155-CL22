@@ -1,0 +1,57 @@
+#
+# Add Custom Networks to Site 2
+#
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+  tasks:
+    - name: Create VXLAN EVPN Fabric Networks (Source of Truth)
+      dcnm_network:
+        fabric: "{{ site2.fabric_name }}"
+        state: replaced
+        config:
+          - net_name: Red_Leader
+            vrf_name: Overlay
+            net_id: 31000
+            vlan_id: 2300
+            gw_ip_subnet: '192.168.1.1/24'
+            deploy: true
+            attach:
+              - ip_address: "{{ site2.leaf2_ip }}"
+                ports: ""
+              - ip_address: "{{ site2.leaf3_ip }}"
+                ports: ""
+          - net_name: "Red_Five"
+            vrf_name: "Overlay"
+            net_id: 31005
+            vlan_id: 2305
+            gw_ip_subnet: "192.168.5.1/24"
+            deploy: true
+            attach:
+              - ip_address: "{{ site2.leaf2_ip }}"
+                ports: ""
+              - ip_address: "{{ site2.leaf3_ip }}"
+                ports: ""
+          - net_name: "Blue_Leader"
+            is_l2only: true
+            net_id: 31010
+            vlan_id: 2310
+            deploy: true
+            attach:
+              - ip_address: "{{ site2.leaf2_ip }}"
+                ports: ""
+              - ip_address: "{{ site2.leaf3_ip }}"
+                ports: ""

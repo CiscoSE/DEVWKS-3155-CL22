@@ -1,0 +1,67 @@
+#
+# Add Switches to Fabric (role set at time of addition)
+#
+
+- hosts: dcnm
+  gather_facts: false
+  connection: ansible.netcommon.httpapi
+
+  collections:
+    - cisco.dcnm
+
+  vars:
+    # Need to extend timeouts because discovery process is slow
+    ansible_command_timeout: 1800
+    ansible_connect_timeout: 1800
+
+    switch_username: "{{ lookup('env', 'SWITCH_USER') }}"
+    switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
+
+  tasks:
+    # Add Switches to Fabric
+    - name: "Add Switches to VXLAN '{{ site2.fabric_name }}' fabric"
+      dcnm_inventory:
+        fabric: "{{ site2.fabric_name }}"
+        state: merged
+        config:
+          - seed_ip: "{{ site2.bgw2_ip }}"
+            max_hops: 0
+            preserve_config: true
+            role: "{{ site2.bgw2_role }}"
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+          - seed_ip: "{{ site2.spine2_ip }}"
+            max_hops: 0
+            preserve_config: true
+            role: "{{ site2.spine2_role }}"
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+          - seed_ip: "{{ site2.leaf2_ip }}"
+            max_hops: 0
+            preserve_config: true
+            role: "{{ site2.leaf2_role }}"
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+          - seed_ip: "{{ site2.leaf3_ip }}"
+            max_hops: 0
+            preserve_config: true
+            role: "{{ site2.leaf3_role }}"
+            auth_proto: MD5
+            user_name: "{{ switch_username }}"
+            password: "{{ switch_password }}"
+
+    # Latest version of the inventory collection module automatically saves and deploy
+
+    # # Save and Deploy
+    # - name: Save changes to "{{ site2.fabric_name }}"
+    #   dcnm_rest:
+    #     method: POST
+    #     path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site2.fabric_name }}/config-save"
+
+    # - name: Deploy changes to "{{ site2.fabric_name }}"
+    #   dcnm_rest:
+    #     method: POST
+    #     path: "/appcenter/cisco/ndfc/api/v1/lan-fabric/rest/control/fabrics/{{ site2.fabric_name }}/config-deploy"
