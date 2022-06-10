@@ -23,7 +23,10 @@
     switch_password: "{{ lookup('env', 'SWITCH_PASS') }}"
 
     # WORKSHOP TO-DOs
-    vlan_policy_vars: "???"
+    vlan_policy_vars:
+      NAME: "Red_Five"
+      VLAN: 2305
+      MODE: "CE"
 
   tasks:
     - name: Read in SVI JSON Data
@@ -93,7 +96,7 @@
               bpdu_guard: no
               mode: trunk
               mtu: jumbo
-              port_type_fast: yes
+              port_type_fast: no
               allowed_vlans: "{{ vlan_policy_vars.VLAN }}"
 
     # Save and Deploy
